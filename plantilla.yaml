@@ -1,0 +1,160 @@
+# YAML es un lenguaje de marcado de información:
+# Similar a lo que sería JSON o XML
+# YAML / XML / HTML / SGML
+# ML -> Markup Language
+# YAML -> YAML Ain't Markup Language
+# Es un lenguaje orientado a seres humanos
+# En yaml podemos poner comentarios, a diferencia de JSON, aleluia!!!!!
+# YAML es un lenguaje que está imponiéndose de forma masiva en el mercado.
+# - Docker compose
+# - Kubernetes
+# - Ansible
+# - Gitlab CI
+# - Github Actions
+# - Azure devops
+# - La configuración de red en ubuntu es un fichero YAML
+# De hecho se ha comido a JSON literalmente
+# JSON hoy en día se ha embebido dentro de la especificación YAML
+# Cualquier documento JSON Es un documento YAML válido
+# No todo documento YAML es un documento JSON válido
+# Con cualquier parse YAML podemos parsear JSON
+---
+# En yaml puedo tener un archivo con múltiples documentos, a diferencia de JSON y XML
+# Cada documento empieza por la secuencia de caracteres: ---
+# Esa secuencia es obligatoria salvo en el primer documento del archivo
+---
+# En ocasiones vereis cosas como:
+...
+---
+# Los 3 puntos son la marca de fin de documento YAML... pero son opcionales.
+# Cuando escribimos un fichero NUNCA LOS USAMOS (salvo algún gilipollas que quiera ir de friki)
+# Esos 3 puntos tienen SOLO sentido cuando estamos mandando documentos YAML por una red
+---
+# Un documento YAML es un NODO
+# YAML Admite 2 tipos de nodos: ESCALARES / DE COLECCION
+---
+# Nodos escalares: Son los que tienen un valor único
+# Números
+---
+3
+---
+-7
+---
+2.45
+---
+-.Inf
+---
+# Valores lógicos:
+True # true # TRUE
+---
+False # false # FALSE
+---
+# Textos: Con diferencia lo más complejo en YAML
+Es\tto" e\s 'un #ejemplo de texto # esta es la forma preferida de escribir textos en YAML
+---
+"Es\tto\" e\\s 'un #ejemplo de texto" # La contrabarra solo está disponible en comillas dobles
+# Donde se le da sentido de caracter de escape: \n \t \r \b \f \u \U
+---
+'Es\tto" e\s ''un #ejemplo de texto'
+# Es posible en los casos anterior escribir textos multilinea... NO LO HACEMOS NUNCA
+---
+"Esta es la linea 1
+Esta es la linea 2
+
+Esta es la linea 3"
+---
+# Las sintaxis anteriores quedan restringidas a textos de una linea.
+# Si queremos escribir textos multilinea, tenemos otras 2 sintaxis diferentes:
+# Literal
+|6-
+       esto seria el comienzo de un texto
+      que sigue aqui
+      Y más aún 
+      Y que puede tener caracteres raros.-.. a kilos: #\"'
+
+
+---
+# Folded
+>-
+      esto seria el comienzo de un texto
+      que sigue aqui
+      Y más aún 
+      Y que puede tener caracteres raros.-.. a kilos: #\"'
+
+---
+# Hay otros nodos de tipo escalar:
+# Fechas:
+1999-12-31T23:59:59.999Z
+---
+# Nulo
+~
+---
+# Nodos de colección:
+# Listas ordenadas
+- item 1
+- True
+- 3
+- 
+  - item 1
+  - item 2
+  - item 3
+- - item 1 # IGUAL A LO DE ARRIBA
+  - item 2
+  - item 3
+---
+# HAY UNA SINTAXIS ALTERNATIVA A LAS LISTAS... Y TOTALMENTE DESACONSEJADA:
+[1,2,3]
+# Lo primero no es human friendly
+# Lo segundo la cagamos en cuanto entre a un GIT. 
+# Si cambia un dato, git (y otros SCM) identifican cambios a nivel de LINEA
+---
+- 1
+- 2
+- 3
+---
+# Hay un escenario de uso LEGITIMO para esa sintaxis:
+[]
+---
+# Mapas desordenados / HASHMAP / Conjunto claves:valor
+clave1: valor1
+clave2: true
+clave3: 3
+clave4: 
+  - item 1
+  - item 2
+  - item 3
+clave 5: 
+  clave 6: valor 6
+  clave 7: valor 7
+---
+# Por si teneis la mala suerte de topar con uin friki:
+?clave1: valor1
+?clave2: true
+?clave3: 3
+# Esto solo tiene sentido en caso muy rro, que no nos saldrán ni en Kubernetes ni ansible, ni docker.
+? - item1
+  - item2
+  - item3
+: 4
+# Lo que tengo es una LISTA como clave de un mapa
+---
+# Por último hay una sintaxis alternativa a los mapas:
+{clave1: valor1, clave2: true, clave3: 3} # NO SE USA TAMPOCO... mismos motivos que con los []
+---
+# Solo hay un caso de uso legítimo para esa sintaxis:
+{} # Mapa vacío
+---
+{
+  "clave1": "valor1",
+  "clave2": true,
+  "clave3": 3,
+  "clave4": [
+    "item 1",
+    "item 2",
+    "item 3"
+  ]
+}
+---
+# Yaml solo me da una sintaxis.
+# Cuando un programa quiere usar YAML como lenguaje de transporte de datos, define su propio ESQUEMA YAML, igual que tenemos XML Schema, JSON Schema
+# En el esquema se definen los tipos de nodos que puedo incluir en el documento, y en el caso de los mapas, las claves válidas.

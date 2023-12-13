@@ -4,7 +4,7 @@
 Un contenedor es un entorno aislado dentro de un SO que rueda un Kernel Linux donde ejecutar procesos.
 Aislado:
 - Ese entorno tiene su propia conf. de red -> IP propia
-- Tiene su propio sistema de ficheros
+- Tiene su propio sistema de ficheros -> VOLUMEN
 - Tiene sus propias variables de entorno
 - Puede tener limitaciones de recursos (CPU, RAM, etc.). ESTO NO LO HACEMOS NUNCA CON DOCKER.... pero ya os contaré por qué!
 
@@ -347,6 +347,8 @@ En el host, que también tiene una estructura POSIX de carpetas (al fin y al cab
             docker/
                 containers/
                     mi-contenedor/
+                        ivancete/
+                            ivancete
                         var/        Datos de las apps (logs, ficheros de una bbdd, etc.)
                             nginx/
                                 logs/       <<<< Logs de nginx
@@ -435,3 +437,74 @@ La imagen de fedora trae:
 - + yum
 - + dnf
 
+---
+
+MV que he montado con Windows Server
+Ahí dentro monto un SQL Server 2017
+
+Y ahora, 2 años después digo.... ummmm si ha salido el 2019... voy a actualizarlo.
+Qué haceis? Como benditos, accedeis a la MV donde está montado el SQL Server y lo actualizais.
+
+Esto está guay (REALMENTE ES UNA MIERDA)... pero es lo que hacemos...
+
+Pero... en el mundo de los contenedores... la cosa cambia!
+Yo he creado un contenedor con SQL Server 2017...
+Y sale el SQL Server 2019....
+Pues lo tengo claro... Cojo el contenedor del 2017 y lo tiro a la basura... y creo un contenedor nuevo con el 2019.
+ESTA ES LA FORMA DE TRABAJAR CON CONTENEDORES !
+
+Claro... y los datos? Pues se han ido a tomar por culo con el contenedor! INADMISIBLE !
+
+Solución: VOLUMENES
+
+# Volumen de un contenedor
+
+Es un punto de montaje dentro del sistema de archivos del contenedor que apunta a un almacenamiento externo al contenedor.
+Lo mismo que cuando en una máquina Linux hago un: 
+
+    $ mount -t nfs mi-servidor:/datos /mnt/datos
+
+En windows es lo que hacemos cuando pulsamos en "Conectar unidad de red" y le decimos que se conecte a un recurso compartido de red.
+En la unidad X... tengo un punto de montaje que apunta a un almacenamiento externo a mi máquina.
+
+En el caso de los contenedores es la misma idea... 
+Depende de la herramienta que utilice para gestionar el contenedor, el almacenamiento externo puede ser de distintos tipos:
+- Carpeta del host: /home/mi-usuario/datos -> /var/miapp/datos   <<<<<< Esto es lo que hacemos cuando trabajamos con Docker 
+                                                                        Y es justo lo que NUNCA JAMAS EN LA VIDA vamos a hacer cuando trabajamos con Kubernetes
+- Un trozo de la memoria RAM del host montada como una ruta dentro del sistema de archivos del contenedor: 1Mb -> /var/miapp/datos
+- Tenga una cabina de discos SAN, y monte un LUN dentro del contenedor: /dev/sdb -> /var/miapp/datos
+- Tenga un NAS, y monte un recurso compartido dentro del contenedor: //mi-nas/datos -> /var/miapp/datos
+- Tenga un servicio de almacenamiento en la nube (AWS, AZURE), y monte un recurso compartido dentro del contenedor: https://mi-nube/datos -> /var/miapp/datos
+
+De esta forma, el sistema de archivos de un contenedor queda:
+
+CUANDO VEO EL SISTEMA DE ARCHIVOS DE UN CONTENDOR, VEO EL RESULTADO DE SUPERPONER ESTAS CAPAS
+
+                                    O O
+
+                                vvvvvvvvvvvvvvvv
+    CAPA N+1: Inyectar la configuración de nginx. Carpeta en red nfs: mi-servidor:/configuracion/nginx -> /etc/nginx
+             etc/
+                nginx/
+                    nginx.conf
+    CAPA N: VOLUMENES: Cuyo almacenamiento real está fuera del contenedor ---> Volumen de AMAZON -> /var/miapp/datos
+                        var/                            
+                            miapp/                      
+                                datos/                  
+                                    fichero1.txt        
+                                    fichero2.txt        
+                                    fichero3.txt        
+    CAPA 1: CAPA DEL CONTENEDOR: Contiene los cambios que se hagan sobre la capa base
+                        var/                            tmp/
+                            log/                            82hd82hd83.tmp
+                                miapp.log
+    CAPA 0: CAPA BASE: Se saca de la imagen del contenedor
+        bin/   etc/     var/        opt/    usr/        tmp/        home/       lib/
+            ls    nginx/                nginx/
+                       nginx.conf           nginx
+
+## Usos de los volúmenes
+
+- Persistencia de datos tras la eliminación de un contenedor
+- Compartir datos entre contenedores. Cada contenedor tiene su sistema de archivos aislado... pero les puedo montar un volumen a todos ellos... y compartir datos entre ellos.
+- Inyectar información (normalmente configuraciones) en un contenedor

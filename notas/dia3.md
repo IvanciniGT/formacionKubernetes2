@@ -128,3 +128,152 @@ un paradigma de programación declarativo:
 - Terraform
 - Spring Boot
 - Angular
+
+```properties
+# Spring app file. 
+# Databse connection properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.datasource.driver-class-name=org.postgresql.Driver
+```
+
+```yaml 
+# Spring app file. 
+# Databse connection properties
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+```
+
+---
+
+# Aquitectura de un cluster de kubernetes
+
+En un entono de producción un cluster de kubernetes tendrá al menos 5 nodos.
+Kubernetes no es un programa... Realmente son un montón de programas que se comunican entre sí.
+Algunos de esos programas se instalan a hierro en las máquinas que forman el cluster.
+Otros se instalan como contenedores dentro del propio cluster. Estos programas forman lo que llamamos el "plano de control" de kubernetes.
+El plano de control de un cluster de producción debe tener al menos 3 nodos.... y esto es debido a qué una de las apps que forman parte de kubernetes necesita al menos 3 replicas para ofrecer la alta disponibilidad que necesitamos en un entorno de producción: ETCD
+
+En general todas las herramientas de almacenamiento de datos (bbdd, sistemas de mensajería -kafka, indexadores -elastic, etc) necesitan un número impar de nodos (>=3) para ofrecer alta disponibilidad. Esto se hace para que al elegir uno de ellos como maestro pueda haber una votación con mayorías... y evitar un gran problema que puede ocurrir en caso contrario: Split Brain
+
+Al menos necesitaré 2 nodos adicionales para carga de trabajo (mis aplicaciones)
+En los nodos del plano de control NO es recomendable desplegar aplicaciones de usuario. Se reservan para las apps de kubernetes.
+
+Herramientas del plano de control de kubernetes:
+
+- ETCD: Base de datos de clave/valor distribuida. Almacena la configuración de kubernetes. Necesita al menos 3 nodos para ofrecer alta disponibilidad.
+- ApiServer: Servidor de API REST. Es el que recibe las peticiones al cluster.
+- ControllerManager: Es el que se encarga de gestionar los recursos del cluster. 
+  - Es el que se encarga de que los nodos estén en el estado que deben estar.
+  - El que monitoriza los nodos y los pods.
+- CoreDNS: DNS interno al cluster de kubernetes.
+- Scheduler: Es el que se encarga de decidir en que nodo se va a desplegar cada pod.
+- Plugins de red: va a crear una red virtual a la que conectar los pods. 
+  - Docker crea su propia red virtual dentro del host. Eso en Kubernetes no funciona.
+  - En kubernetes los pods deben tener comunicación entre si... a pesar de estar en diferentes nodos.
+  - Necesitamos una red virtual montada sobre la red física de la máquina.
+  - Hay un montón de proveedores (plugins) que nos ayudan a montar esas redes virtuales. Los 2 más usqados son:
+     - Calico:  Es un poquito más complejo, pero es el que más se usa en producción: Rendimiento + Funcionalidad
+     - Flannel: Se instala muy sencillo... pero tiene poca funcionalidad
+
+Fuera del cluster hará falta montar adicionalmente:
+- Un gestor de contenedores: crio / containerd
+- kubelet: Es un servicio el que se encarga de gestionar los contenedores en cada nodo. Más propiamente, es el que se encarga de hablar con el gestor de contenedores local.
+- kube-proxy: Es el que se encarga de gestionar las reglas de red en cada nodo. 
+- kubeadm: Es el que se encarga de gestionar el cluster de kubernetes:
+  - Crear el cluster
+  - Añadir nodos al cluster. Cada nodo solicita ser añadido a un cluster ... y en todos los nodos necesitamos esta herramienta para añadirlos al cluster.
+
+En alguna máquina (normalmente externa al cluster), montaremos kubectl: Es la herramienta que nos permite comunicarnos con el cluster de kubernetes. CLIENTE DE KUBERNETES:
+
+    Docker      Kubernetes
+    dockerd     apiServer
+       ^           ^
+    docker      kubectl
+
+# Instalación de kubernetes
+
+Maquina 1: Será una máquina del plano de control
+Instalaremos:
+- crio
+- kubelet
+- kubeadm
+- kubectl
+
+Después solicitaremos a kubeadm que cree un cluster de kubernetes en esta máquina:
+- Descargará las imagenes de los contenedores de los pods del plano de control (apiServer, etcd, coredns, controllerManager, scheduler...)
+- Crea contenedores y los arranca
+- En este momento ya tendremos cluster
+
+Posteriormente con kubectl crearemos los objetos que gestionen la RED Virtual de kubernetes
+
+Maquina 2... Máquina N
+- crio
+- kubelet
+- kubeadm
+
+con kubeadm añadiremos la máquina al cluster de kubernetes
+Algunas de estas máquinas las etiquetaremos como "nodos del plano de control" y esos nodos será gestionados y usados por el propio kubernetes para despliegue del plano de control con HA (replicas de pods del plano de control)
+
+Una vez hecho esto, comenzaremos a crear configuraciones/objetos dentro de kubernetes , para que KUBERNETES empiece a gestionar nuestro cluster.
+Lo haremos mediante ficheros YAML que pasaremos al cluster con el kubectl 
+
+---
+
+# Objetos que vamos a tener que aprender a configurar en kubernetes
+
+- Namespace                     Entornos lógicos de trabajo
+- Node                          Máquinas
+- Pods                          Contienen los contenedores que ejecutan nuestras aplicaciones
+- Plantillas de pods
+  - Deployments
+  - StatefulSets
+  - DaemonSets
+- Jobs                          Contienen contenedores... one shot (que ejecutan tareas simples: Backup de la BBDD)
+- Plantilla de Jobs:
+  - CronJobs
+- Services                      IP de Balanceo de carga
+  - ClusterIP
+  - NodePort    
+  - LoadBalancer    
+- Ingress                       Reglas de proxy reverso
+- PersistentVolume              Está muy claro
+- PersistentVolumeClaim         Peticiones de almacenamiento
+- ConfigMap                     Configuraciones editables de las apps (al cambiar la app de entorno)
+- Secret                        Similar pero encritado
+- HorizontalPodAutoscaler       Escaladores de pods
+--------------^ DESARROLLO DE SOFTWARE ^-----------------
+- NetworkPolicy                 Reglas de firewall (hablaremos poco)
+- ResourceQuota
+- LimitRange
+- ServiceAccount
+
+---
+
+Un cluster de kubernetes no es solo instalar eso de ahí...
+Encima de eso . nos hará falta instalar más cosas:
+- Metric Server: Es el que se encarga de recoger las métricas de los pods y los nodos (Sin ésto no funciona el autoescalado de pods)
+- Dashboard: Es una consola gráfica para ver el estado del cluster  
+- Provisionador de almacenamiento: Es el que se encarga de crear los volúmenes de almacenamiento dinámicamente en el cluster:
+  - NFS
+  - Cabina fibra-optica (LUN)
+  - Ceph
+- Un IngressController: Es el que se encarga de gestionar las reglas de proxy reverso en el cluster de kubernetes
+- Si trabajamos en un cluster local (no en un cloud), adicionalmente necesitaremos un balanceador de carga externo al cluster compatible con kubernetes: MetalLB
+- DNS externo al cluster. Podemos queres que se autoconfigure por kubernetes -> Despliegue / Operador
+- Certificados(https). Solemos montar un gestor de certificados en el cluster de kubernetes: CertManager
+- Istio? Service mesh
+
+- Monitorización de las apps - Logs -> Prometheus / Grafana
+                                    -> EFK (ElasticSearch / FluentD / Kibana) 
+
+Introduccion a la contenedorización: 25 horas: DOCKER + IMAGENES DE DOCKER
+Introduccion a Kubernetes: 30 horas
+Administración: 25 horas
+ISTIO: 30 horas (1 hora) / Linkerd
+Helm: 30 horas (2 horas)

@@ -1,0 +1,51 @@
+
+# Docker compose
+# Es una utilidad dentro de docker (antiguamente era una app independiente creada por Docker Inc.)
+# docker-compose = DEPRECATED DEL TODO 
+# En paralelo es una especificación (esquema YAML) acerca de cómo montar unos contenedores en un entorno local
+# La mayor parte de gestores de contenedores: docker, podman, rancher, saben leer este tipo de ficheros.
+
+# Lo primero que necesitamos decir es la versión del esquema yaml de docker compose que vamos a usar.
+version: "2" # La versión 3 incluye cambio orientados a Docker SWARM
+
+services: # "Básicamente" son los contenedores que vamos a crear
+    bd:                                             # Nombre fqdn resoluble por red para atacar al contenedor
+        container_name:     wordpress-db            # Nombre del contenedor
+                                                    # Con el que refirirnos a él cuando ejecutemos comandos de docker
+        image:              mariadb:11.2-jammy
+        environment:
+                          - MARIADB_ROOT_PASSWORD=password
+                          - MARIADB_DATABASE=wordpress
+                          - MARIADB_USER=wordpress
+                          - MARIADB_PASSWORD=password
+        volumes:
+                          - /home/ubuntu/environment/wordpress/db:/var/lib/mysql
+
+    app:
+        container_name:     wordpress-app
+        image:              wordpress:6.4-php8.1-apache
+        environment:
+            WORDPRESS_DB_HOST:          bd
+            WORDPRESS_DB_NAME:          wordpress
+            WORDPRESS_DB_USER:          wordpress
+            WORDPRESS_DB_PASSWORD:      password
+        volumes:
+                          - /home/ubuntu/environment/wordpress/app:/var/www/html/
+        ports:
+                          - 8080:80
+        
+# Este fichero lo ejecutaremos a través de "docker compose"
+# $ docker compose -f wordpress.yaml up         # Esto creará los contenedores y los arranca... 
+#                                               # además me bloquea la consola mostrando en tiempo real su log 
+#                                               # (el de cada uno en un color diferente)
+# $ docker compose -f wordpress.yaml up -d      # Modo dettached... sin ver los logs (en segundo plano)
+# el -f FICHERO lo podeis obviar si llamais al fichero docker-compose.yaml o docker-compose.yml
+# docker compose start                          # Solo arranca... pero ya deben de estar precreados
+# docker compose restart                        #
+# docker compose stop                           # Solo para
+# docker compose down                           # Para y elimina
+
+# Este comando hace más cosas que docker.
+# Lo primero es crear una red virtual para estos contenedores nueva
+# El nombre de los contenedores, si no lo pongo, se crea con el nombre del servicio 
+# precedido del nombre de la carpeta donde esté este fichero

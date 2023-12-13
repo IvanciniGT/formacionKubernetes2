@@ -158,3 +158,11 @@ clave 5:
 # Yaml solo me da una sintaxis.
 # Cuando un programa quiere usar YAML como lenguaje de transporte de datos, define su propio ESQUEMA YAML, igual que tenemos XML Schema, JSON Schema
 # En el esquema se definen los tipos de nodos que puedo incluir en el documento, y en el caso de los mapas, las claves válidas.
+---
+clave1: valor1
+clave2: true
+---
+clave2: true
+clave1: valor1
+---
+# De cara a YAML son iguales

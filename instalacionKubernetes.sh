@@ -6,6 +6,7 @@ free
 
 # Instalar dependencias de CRIO
 sudo apt install apt-transport-https ca-certificates curl gnupg2 software-properties-common -y
+sudo su -
 
 # Hay que activar un par de modulos en el kernel de Linux
 #  (root) -> 644
@@ -38,6 +39,7 @@ systemctl restart crio
 systemctl status crio
 crictl info
 
+exit # Salir de root
 # Instalacion de kubernetes
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg

@@ -1,0 +1,95 @@
+
+---
+# Deployment
+kind:               Deployment
+apiVersion:         apps/v1
+
+metadata:
+    name:           bbdd
+
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: bbdd
+    template:
+        metadata:
+            name: plantilla-bbdd
+            labels:
+                app: bbdd
+        spec:
+            volumes:
+                -   name:   datos-ram
+                    # definir el tipo de volumen
+                    # Depende el uso que vaya a ahcer del volumen, le pondré uno u otro tipo.
+                    # Usos de volúmenes:
+                    #  - Compartir info entre contenedores del mismo pod:
+                    
+                    # Crea una capreta vacia en el host que comparte entre los contenedores
+                    #emptyDir: {} # Sin configuración especial
+                    emptyDir:
+                        medium: Memory # Lo mismo que el anterior, pero el volumen se crea con soporte físico en RAM. ESPECTACULAR RENDIMIENTO
+
+                -   name:   datos
+                    # Crea una capreta vacia en el host (en su HDD) que comparte entre los contenedores
+                    hostPath:
+                        path: /home/ubuntu/environment/datos/mariadb
+                        type: DirectoryOrCreate
+                    
+                    #  - Injectar configuraciones dentro de un contenedor como ficheros
+                    
+                -   name:   configuracion
+                    # Crea una capreta vacia en el host (en su HDD) que comparte entre los contenedores
+                    configMap: # Igual prodria usar un secret: Clave ssh, certificado...
+                        name: configuracion-bbdd
+
+                    #  - Persistencia de información
+                    # A parte de tener tropetantos tipos, necesitamos 2 nuevos tipos de objetos en Kubernetes... + Un nuevo formato de despliegue de plantillas
+            containers:
+                -   name:   bbdd
+                    image:  mariadb:11.2-jammy
+                    imagePullPolicy: IfNotPresent
+                    volumeMounts:
+                        -   name:   datos
+                            mountPath: /datos
+                        -   name:   datos-ram
+                            mountPath: /rapidos
+                        -   name:   configuracion
+                            mountPath: /conf
+                            # Dentro de esta carpeta se creará un fichero cuyo nombre será el de la clave del configmap
+                            # Y su valor, el valor asociado a la esa clave
+                    env:
+                          - name: MARIADB_ROOT_PASSWORD
+                            valueFrom: 
+                                secretKeyRef:
+                                    name: datos-bbdd
+                                    key:  contrasena-root
+                          - name: MARIADB_DATABASE
+                            value: wordpress
+                          - name: MARIADB_USER
+                            valueFrom: 
+                                configMapKeyRef:
+                                    name: datos-bbdd
+                                    key:  usuario
+                          - name: MARIADB_PASSWORD
+                            valueFrom: 
+                                secretKeyRef:
+                                    name: datos-bbdd
+                                    key:  contrasena
+#        volumes:
+#                          - /home/ubuntu/environment/wordpress/db:/var/lib/mysql
+---
+# Service
+kind:           Service
+apiVersion:     v1            
+
+metadata:
+    name:       bbdd
+
+spec:
+    type: ClusterIP
+    ports:
+        - port: 3306
+          targetPort: 3306
+    selector:                
+        app: bbdd     

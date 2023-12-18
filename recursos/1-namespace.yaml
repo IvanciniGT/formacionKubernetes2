@@ -1,0 +1,11 @@
+kind:           Namespace
+apiVersion:     v1              # Objeto básico de kubernetes
+
+metadata:
+    name:       temis-produccion
+
+# Se ejecuta con kubectl apply -f 1-namespaces.yaml
+# Se comprueba con kubectl get ns+
+
+# Para mirar que tengo dentro de ese ns:
+# $ kubectl get all -n temis-desarrollo

@@ -1,0 +1,25 @@
+kind:           Deployment
+apiVersion:     apps/v1            
+
+metadata:
+    name:       mi-deployment
+
+spec:
+    replicas: 2                 # Quiero 2 replicas
+
+    selector:                   # Creadas desde la plantilla
+        matchLabels:            # Que tenga como etiqueta
+            app: temis-web      # app: temis-web
+
+    template:   
+        metadata:
+            name:       mi-pod
+            labels:
+                app:    temis-web   # De hecho, que causalidad que aqui tengo definida una plantilla con esa etiqueta!
+        spec:
+            containers:
+                -   name: mi-contenedor
+                    image: nginx:latest
+                    imagePullPolicy: IfNotPresent # Cuando se debe descargar la imagen del contenedor del registry
+            
+                                    

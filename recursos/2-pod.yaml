@@ -1,0 +1,14 @@
+kind:           Pod
+apiVersion:     v1              # Objeto básico de kubernetes
+
+metadata:
+    name:       mi-pod
+    #namespace: temis-desarrollo       #   NO SE HACE !
+
+spec:
+    containers:
+        -   name: mi-contenedor
+            image: nginx:latest
+            imagePullPolicy: IfNotPresent # Cuando se debe descargar la imagen del contenedor del registry
+
+        

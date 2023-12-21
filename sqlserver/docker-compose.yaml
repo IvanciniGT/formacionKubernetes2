@@ -1,0 +1,22 @@
+version: '3.3'
+
+services:
+  mssql:
+    build: . # Dockerfile
+    container_name: sql-server
+    restart: always
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: Password_2023
+      SA_PASSWORD: Password_2023
+    ports:
+      - 1433:1433
+    volumes:
+      - my-volume2:/var/opt/mssql
+      - $PWD:/scripts
+      
+volumes:
+  my-volume2:
+
+#docker compose up
+#docker exec -it sql-server /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Pa$$w0rd2023

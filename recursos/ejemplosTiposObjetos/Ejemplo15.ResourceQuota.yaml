@@ -14,4 +14,4 @@ spec:
       pods: 10
       services: 5
       persistentvolumeclaims: 5
-      
+

@@ -10,5 +10,10 @@ spec:
         -   name: mi-contenedor
             image: nginx:latest
             imagePullPolicy: IfNotPresent # Cuando se debe descargar la imagen del contenedor del registry
-
-        
+    initContainers:
+        -   name: mi-contenedor
+            image: ubuntu
+            cmd:
+                - echo
+                - "Hola mundo"
+            imagePullPolicy: IfNotPresent # Cuando se debe descargar la imagen del contenedor del registry

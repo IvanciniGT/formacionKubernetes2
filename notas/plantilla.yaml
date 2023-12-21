@@ -101,6 +101,27 @@ Esta es la linea 3"
 - - item 1 # IGUAL A LO DE ARRIBA
   - item 2
   - item 3
+- clave1: valor1
+  clave2: valor2
+  clave3: valor3
+- clave1: valor1
+  clave2: valor2
+  clave3: valor3
+---
+- arg1
+- arg2
+- arg3
+---
+- clave1: valor1
+  clave2: valor2
+  clave3: valor3
+- clave1: valor1
+  clave2: valor2
+  clave3: valor3
+- texto linea 1
+  linea2
+  linea 3 del mismo texto.. solo hay un texto
+  
 ---
 # HAY UNA SINTAXIS ALTERNATIVA A LAS LISTAS... Y TOTALMENTE DESACONSEJADA:
 [1,2,3]

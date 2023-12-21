@@ -1,0 +1,18 @@
+# DESARROLLO
+# Tipo de objeto
+kind: PersistentVolumeClaim
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: peticion-volumen-nfs # Este es su identificador
+
+spec:
+    storageClassName: volumen-nfs # Tipo de volumen que necesito (Caractersisticas del volumen)
+    resources:
+        requests:
+            storage: 10Gi
+    accessModes:
+        - ReadWriteOnce
+#        - ReadWriteMany
+#        - ReadOnceMany

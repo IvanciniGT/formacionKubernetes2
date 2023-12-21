@@ -1,0 +1,115 @@
+PodTemplate:
+
+    nodeName: ip-172-31-11-196 # NODO_CONCRETO_POR_SU_NOMBRE     A EVITAR !!!
+    
+    nodeSelector: # No es muy flexible, pero si muy cómodo/sencillo
+        # etiquetas
+        zona: Europa
+        beta.kubernetes.io/arch: amd64
+        kubernetes.io/hostname: ip-172-31-11-196
+    
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                #  CUANDO SE APLICAN? Solo al hacer el SCHEDULING no en la EJECUCION
+                nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: zona
+                          operator: In               # In NotIn Exists DoesNotExist Gt Lt
+                          values: 
+                            - Europa
+                            - Asia
+                    - matchExpressions:
+                        - key: cpus
+                          operator: Gt               # In NotIn Exists DoesNotExist Gt Lt
+                          values: 
+                            - 4
+            preferredDuringSchedulingIgnoredDuringExecution:
+                #  CUANDO SE APLICAN? Solo al hacer el SCHEDULING no en la EJECUCION
+                - # Para cada peferencia:
+                    weight: 5
+                    preference:
+                        matchExpressions:
+                            - key: zona
+                              operator: In               # In NotIn Exists DoesNotExist Gt Lt
+                              values: 
+                                - Europa
+                                - Asia
+                - # Para cada peferencia:
+                    weight: 3
+                    preference:
+                        matchExpressions:
+                            - key: zona
+                              operator: In               # In NotIn Exists DoesNotExist Gt Lt
+                              values: 
+                                - Africa
+            # requiredDuringSchedulingRequiredDuringExecution: # A dia de hoy no existe
+            # Dudo que en algun momento exista
+        podAffinity:
+            # REGLA 1:
+            # Busca un nodo, de tal forma que entre los nodos que compartan la topologia definida
+            # encuentres instalado un pod que no tenga la etiqueta mariadb
+            requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                        - key: app
+                          operator: NotIn               # In NotIn Exists DoesNotExist Gt Lt
+                          values: 
+                            - mariadb
+                  topologyKey: kubernetes.io/hostname
+            preferredDuringSchedulingIgnoredDuringExecution:
+
+
+        podAntiAffinity:
+            # REGLA 2: Busca un nodo, de tal forma que entre los nodos que compartan la topologia definida
+            # no encuentres instalado un pod que tenga la etiqueta mariadb
+            requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                        - key: app
+                          operator: In               # In NotIn Exists DoesNotExist Gt Lt
+                          values: 
+                            - mariadb
+                  topologyKey: kubernetes.io/hostname # Agrupar nodos
+            preferredDuringSchedulingIgnoredDuringExecution:
+
+#                    Regla 1                     Regla 2
+#Nodo 1                 √                            x
+#  Wordpress            +
+#  Mariadb                                           -
+#Nodo 2                 √                            √
+#  Wordpress            +
+#Nodo 3                 x                            x
+#  Mariadb                                           -
+
+
+            # Busca un nodo, de tal forma que entre los nodos que compartan su topologia
+            # encuentres instalado un pod que no tenga la etiqueta mariadb
+            requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                        - key: app
+                          operator: NotIn               # In NotIn Exists DoesNotExist Gt Lt
+                          values: 
+                            - mariadb
+                  topologyKey: zona
+
+#Europa:
+#    Nodo 1 - Europa               √
+#        Wp                        +
+#        Mariadb
+#    Nodo 2 - Europa               √
+#        Mariadb
+#Asia:
+#    Nodo 3 - Asia                 x
+#    Nodo 4 - Asia                 x
+#        Mariadb
+#Africa:
+#    Nodo 5 - Africa               √
+#        wordpress                 √
+#    Nodo 6 - Africa
+#America: 
+#    Nodo 7 - America              x
+#    Nodo 8 - America              x
+
+

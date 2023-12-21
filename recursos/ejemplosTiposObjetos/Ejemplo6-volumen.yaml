@@ -1,0 +1,20 @@
+# SISTEMAS
+# Tipo de objeto
+kind: PersistentVolume
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: mariadb-volumen # Este es su identificador
+
+spec:
+    storageClassName: rapidito-redundante # Tipo de volumen que necesito (Caractersisticas del volumen)
+    capacity:
+            storage: 18Gi
+    accessModes:
+        - ReadWriteOnce
+        
+    # Donde está el volumen.... TIPOS DE VOLUMENES PERSISTENTES
+    hostPath:
+        path: /datos/mariadb
+        type: DirectoryOrCreate

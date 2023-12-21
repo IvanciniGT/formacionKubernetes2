@@ -1,0 +1,73 @@
+                # Tipo de objeto
+kind:           Pod
+
+                # Libreria dentro de Kubernetes que contiene
+                # la definición de ese tipo de objeto
+apiVersion:     v1
+
+metadata:
+                # Este es su identificador
+    name:       advanced-pod 
+    
+                # Etiquetas, con un determinado valor.
+                # Qué etiquetas? Las que quiera.
+    labels:
+                app: advanced 
+
+spec:
+    initContainers:
+        -   # Estos son diferentes de los container normales.
+            # Un container normal, no puede acabar nunca.
+            # Un initContainer debe acabar siempre (SCRIPTS) que preaparn el terreno para el resto de containers.
+            
+            name:   nginx-container
+            image:  nginx:latest
+            ports:
+                - containerPort: 80     # Puramente informacional
+                                        # Por ahora....
+            volumeMounts:
+                - name: volumen1
+                  mountPath: /var/nginx/logs
+    
+    containers:
+    
+        -   # Contenedor 1: nginx
+            name:   nginx-container
+            image:  nginx:latest
+            ports:
+                - containerPort: 80     # Puramente informacional
+                                        # Por ahora....
+            volumeMounts:
+                - name: volumen1
+                  mountPath: /var/nginx/logs
+    
+        -   # Contenedor 2: fedora
+            name:   fedora-container
+            image:  fedora:latest
+            # Que está haciendo el contenedor al arrancar?
+            command: ['sh', '-c' , 'sleep 3600;']
+            volumeMounts:
+                - name: volumen1
+                  mountPath: /elvolumen/compartido
+    
+        -   # Contenedor 3: ubuntu
+            name:   ubuntu-container # filebeat fluentd
+            image:  ubuntu:latest
+            command:  ['sh', '-c' , 'sleep 3600;']
+            env:
+                - name: MIVAR1
+                  value: valor1 del var 1
+                - name: MIVAR2
+                  value: "22222"
+            volumeMounts:
+                - name: volumen1
+                  mountPath: /volumen1
+    volumes:
+        -   # Un primer volumen
+            name: volumen1
+            # TIPO DE VOLUMEN: 
+            # EmptyDir va a generar un directorio en local
+            # En el host... que no tengo npi de donde está.
+            # Tampoco me importa
+            emptyDir: {}
+                

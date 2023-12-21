@@ -1,0 +1,17 @@
+# Tipo de objeto
+kind: ResourceQuota
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: rq-prueba3 # Este es su identificador
+    namespace: prueba3
+
+spec:
+    hard:
+      limits.cpu: 4000m
+      limits.memory: 2Gi
+      pods: 10
+      services: 5
+      persistentvolumeclaims: 5
+      

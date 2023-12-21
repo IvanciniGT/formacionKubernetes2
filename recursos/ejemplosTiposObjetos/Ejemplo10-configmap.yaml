@@ -1,0 +1,226 @@
+# Usos del ConfigMap:
+# - Centralizar variables de entorno: Los valores los tengo unificados (en un único sitio). Reolvemos la Sincronización
+# - Tener todas las config en el mismo sitio
+# - Compartir config entre objetos (pods) ... esto es más o menos lo mismo que el punto 1
+# - Quién crea el config map: 
+#    - El desarrollador en su entorno
+#    - Quien lo rellena para los distinto los entornos son los administradores. Pej.
+#       - Memoria JAVA. Es lo mismo en todos los entornos? NO.... quien la rellena: Admin.      
+#       - Nombre de una BBDD con la quiero conectar
+#       - Maquina donde esta una BBDD
+kind: ConfigMap
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: configuracion # Este es su identificador
+
+data:
+    propiedad1: valor1
+    propiedad2: valor2
+    propiedad3: valor3
+    propiedad4: valor4
+    propiedad5: valor5
+    propiedad20: valor20
+---
+kind: Secret
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: secretitos # Este es su identificador
+
+data:
+    MARIADB_ROOT_PASSWORD: cGFzc3dvcmQK # Los valores van en BASE64
+    MARIADB_DATABASE: bWlkYgo=
+    MARIADB_USER: dXN1YXJpbwo=
+    MARIADB_PASSWORD: cGFzc3dvcmQK
+---
+# Con este comando creariamos un secret a mano desde la terminal, que no aparece en ningún fichero.
+# kubectl create secret generic misecreto --from-literal=password=micontrasena
+---
+kind: ConfigMap
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: configuracion2 # Este es su identificador
+
+data:
+    # Si detrás de la barra no pongo nada... Siempre se acaba el texto con un UNICO salto de linea... aunque haya muchos
+    # Si detrás de la barra pongo +... Se respetan todos y cada uno de los saltos de linea que haya al final
+    # Si detrás de la barra pongo -... Al final del texto no se incluye NINGUN salto de linea
+    fichero1.properties: |
+        user                    nginx;   # Usuario con el que se crean los subprocesos . P ej. Workers
+        worker_processes        2;       # Numero de workers. Depende de las CPUs disponibles
+        error_log  /var/log/nginx/error.log warn;   # Ubicación fichero de log de errores . Con el nivel de severidad
+        pid        /var/run/nginx.pid;              # Ubicación fichero que contiene el PID del master de nginx
+        
+        events {
+            worker_connections  1024;              # Número de hilos /Conexiones simultaneas atendibles por UN worker
+        }
+        
+        ## Parte de la configuración que alude al protocolo http
+        
+        http {
+            include       /etc/nginx/mime.types;    # Tipos de archivos (asociados a extensiones) que nginx auto-reconoce
+            default_type  application/octet-stream; # Si no encuentra un tipo de datos en el fichero anterior, pon este. BINARIOS
+            log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                              '$status $body_bytes_sent "$http_referer" '
+                              '"$http_user_agent" "$http_x_forwarded_for"';
+                        # LISTADO DE VARIABLES EN NGINX: http://nginx.org/en/docs/varindex.html
+                            # En este caso, al formato, le denominamos "main"... es un nombre con el que referirnos a él.
+        
+            access_log  /var/log/nginx/access.log  main;    # Ubicacion de un archivo donde se genere un log de accesos / Peticiones HTTP
+            sendfile        on;                             # Cómo nginx lee los ficheros a la hora de mandarlos al cliente.
+                                                # Con sendfile off => POR DEFECTO
+                                                        # Nginx lee los ficheros a un buffer en RAM y desde ese buffer se van mandando al cliente
+                                                # Con sendfile on => NO ES POR DEFECTO
+                                                        # Nginx lee los ficheros y según va leyendo lo va mandando al cliente, sin cargarlo a un buffer propio en RAM
+                                                            # ESTO VA GUAY EN LINUX. En otros SO..... bufffff
+            #tcp_nopush     on;
+            keepalive_timeout  65;              # Tiempo que se va a mantener abierta la conexión sin notificaciones del cliente
+            #gzip  on;
+        
+            # Esto sería un VIRTUAL HOST
+            server {
+                listen  80;                 
+                server_name  localhost;     # El DNS a través del que se pueden recibir las peticiones adicionalmente
+                root /app1;                 # La ruta (lo que hay detrás del puerto en la URL) buscala en una carpeta de mi Sistema de Archivos
+            }
+        }
+        
+        
+        
+    fichero2.yaml: |+
+        user                    nginx;   # Usuario con el que se crean los subprocesos . P ej. Workers
+        worker_processes        2;       # Numero de workers. Depende de las CPUs disponibles
+        error_log  /var/log/nginx/error.log warn;   # Ubicación fichero de log de errores . Con el nivel de severidad
+        pid        /var/run/nginx.pid;              # Ubicación fichero que contiene el PID del master de nginx
+        
+        events {
+            worker_connections  1024;              # Número de hilos /Conexiones simultaneas atendibles por UN worker
+        }
+        
+        ## Parte de la configuración que alude al protocolo http
+        
+        http {
+            include       /etc/nginx/mime.types;    # Tipos de archivos (asociados a extensiones) que nginx auto-reconoce
+            default_type  application/octet-stream; # Si no encuentra un tipo de datos en el fichero anterior, pon este. BINARIOS
+            log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                              '$status $body_bytes_sent "$http_referer" '
+                              '"$http_user_agent" "$http_x_forwarded_for"';
+                        # LISTADO DE VARIABLES EN NGINX: http://nginx.org/en/docs/varindex.html
+                            # En este caso, al formato, le denominamos "main"... es un nombre con el que referirnos a él.
+        
+            access_log  /var/log/nginx/access.log  main;    # Ubicacion de un archivo donde se genere un log de accesos / Peticiones HTTP
+            sendfile        on;                             # Cómo nginx lee los ficheros a la hora de mandarlos al cliente.
+                                                # Con sendfile off => POR DEFECTO
+                                                        # Nginx lee los ficheros a un buffer en RAM y desde ese buffer se van mandando al cliente
+                                                # Con sendfile on => NO ES POR DEFECTO
+                                                        # Nginx lee los ficheros y según va leyendo lo va mandando al cliente, sin cargarlo a un buffer propio en RAM
+                                                            # ESTO VA GUAY EN LINUX. En otros SO..... bufffff
+            #tcp_nopush     on;
+            keepalive_timeout  65;              # Tiempo que se va a mantener abierta la conexión sin notificaciones del cliente
+            #gzip  on;
+        
+            # Esto sería un VIRTUAL HOST
+            server {
+                listen  80;                 
+                server_name  localhost;     # El DNS a través del que se pueden recibir las peticiones adicionalmente
+                root /app1;                 # La ruta (lo que hay detrás del puerto en la URL) buscala en una carpeta de mi Sistema de Archivos
+            }
+        }
+        
+    fichero3.yaml: |-
+        user                    nginx;   # Usuario con el que se crean los subprocesos . P ej. Workers
+        worker_processes        2;       # Numero de workers. Depende de las CPUs disponibles
+        error_log  /var/log/nginx/error.log warn;   # Ubicación fichero de log de errores . Con el nivel de severidad
+        pid        /var/run/nginx.pid;              # Ubicación fichero que contiene el PID del master de nginx
+        
+        events {
+            worker_connections  1024;              # Número de hilos /Conexiones simultaneas atendibles por UN worker
+        }
+        
+        ## Parte de la configuración que alude al protocolo http
+        
+        http {
+            include       /etc/nginx/mime.types;    # Tipos de archivos (asociados a extensiones) que nginx auto-reconoce
+            default_type  application/octet-stream; # Si no encuentra un tipo de datos en el fichero anterior, pon este. BINARIOS
+            log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                              '$status $body_bytes_sent "$http_referer" '
+                              '"$http_user_agent" "$http_x_forwarded_for"';
+                        # LISTADO DE VARIABLES EN NGINX: http://nginx.org/en/docs/varindex.html
+                            # En este caso, al formato, le denominamos "main"... es un nombre con el que referirnos a él.
+        
+            access_log  /var/log/nginx/access.log  main;    # Ubicacion de un archivo donde se genere un log de accesos / Peticiones HTTP
+            sendfile        on;                             # Cómo nginx lee los ficheros a la hora de mandarlos al cliente.
+                                                # Con sendfile off => POR DEFECTO
+                                                        # Nginx lee los ficheros a un buffer en RAM y desde ese buffer se van mandando al cliente
+                                                # Con sendfile on => NO ES POR DEFECTO
+                                                        # Nginx lee los ficheros y según va leyendo lo va mandando al cliente, sin cargarlo a un buffer propio en RAM
+                                                            # ESTO VA GUAY EN LINUX. En otros SO..... bufffff
+            #tcp_nopush     on;
+            keepalive_timeout  65;              # Tiempo que se va a mantener abierta la conexión sin notificaciones del cliente
+            #gzip  on;
+        
+            # Esto sería un VIRTUAL HOST
+            server {
+                listen  80;                 
+                server_name  localhost;     # El DNS a través del que se pueden recibir las peticiones adicionalmente
+                root /app1;                 # La ruta (lo que hay detrás del puerto en la URL) buscala en una carpeta de mi Sistema de Archivos
+            }
+        }
+        
+        
+---
+# Esto es responsablidad pura del desarrollador... AQUI EL ADMIN NO TOCA POR NADA DEL MUNDO VVVV
+kind: Pod
+apiVersion: v1
+
+metadata:
+    name: prueba-configmap 
+
+spec:
+    containers:
+        - image: nginx
+          name: prueba1
+          env:
+            - name: PROPIEDAD_A # Va a generar en el contenedor una variable de entorno:
+                                # Con el nombre; PROPIEDAD_A y con valor: valor1
+              valueFrom: 
+                configMapKeyRef:
+                    name: configuracion
+                    key: propiedad1
+          env:
+            - name: DB_PASSWORD # Va a generar en el contenedor una variable de entorno:
+                                # Con el nombre; PROPIEDAD_A y con valor: valor1
+              valueFrom: 
+                secretKeyRef:
+                    name: secretitos
+                    key: MARIADB_PASSWORD
+                    
+        - image: fedora
+          name: prueba2
+          command: ['sh', '-c' , 'sleep 3600;']
+          envFrom:
+            - configMapRef:
+                name: configuracion
+                
+        - image: ubuntu
+          command: ['sh', '-c' , 'sleep 3600;']
+          name: prueba3
+          env: # SIEMPRE el env tiene prioridad sobre el envFrom
+            - name: propiedad2 
+              value: VALOR_FIJO_PERSONALIZADO
+          envFrom:
+            - configMapRef:
+                  name: configuracion
+          volumeMounts:
+            - name: ficheros-configuracion
+              mountPath: /config
+    volumes:
+        - name: ficheros-configuracion
+          configMap:
+            name: configuracion2
+    

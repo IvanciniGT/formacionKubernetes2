@@ -1,0 +1,22 @@
+# Tipo de objeto
+kind: LimitRange
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: limit-prueba # Este es su identificador
+    namespace: prueba3
+
+spec:
+    limits:
+    - type: Container #Pod
+      defaultRequest:  # Si el desarrollador no me dice nada en donde? en su request, le pongo esté valor
+        cpu: 1000m
+      default:         # Limite por defecto si el desarrollador no pide nada
+        cpu: 1500m
+      max:             # Límite máximo al que puedo llegar (limit, request) 
+        cpu: 2000m
+        memory: 2Gi
+      min:             # Valor menos que que el desarrollador puede solicitar (limit, request) 
+        cpu: 500m
+      

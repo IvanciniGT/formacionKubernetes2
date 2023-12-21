@@ -1,0 +1,178 @@
+---
+# Config Map para la URL
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: nginx-web-config
+
+data:
+    WEB_URL: https://github.com/IvanciniGT/webEjemploAnsible
+---
+# Config Map para la URL
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: nginx-config
+
+data:
+    default.conf: |
+        server {
+            listen       80;
+            listen  [::]:80;
+            server_name  localhost;
+        
+            #access_log  /var/log/nginx/host.access.log  main;
+        
+            location / {
+                root   /miweb;
+                index  index.html index.htm;
+            }
+            
+            error_page   500 502 503 504  /50x.html;
+            location = /50x.html {
+                root   /miweb;
+            }
+        
+        }
+---
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: script-loader
+
+data:
+    loader.sh: |
+        #!/bin/bash
+        
+        if [[ ! -f /misitioweb/index.html ]]; then
+            apt-get update && apt-get install git -y
+            git clone $URL /misitioweb
+        fi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+    name: nginx-website-claim
+
+spec:
+    storageClassName: volumen-nfs # Asocia esta peticion al PROVISIONADOR DE NFS para que genere un Volumen automaticamente
+    resources:
+        requests:
+            storage: 10Gi
+    accessModes:
+        - ReadWriteOnce
+---
+# Deployment
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+    name: miweb
+    labels:
+        app: miweb # Donde usamos este label... En ningún sitio
+        
+spec:
+    replicas: 2
+    
+    selector: 
+        matchLabels:
+            app: miweb     #    <<<<<<
+                           #         V
+    template:              #         V
+        metadata:          #         V
+            labels:        #         V
+                app: miweb #    <<<<<<
+                site: misuperweb
+        spec:
+            #affinity:
+            #nodeSelector:
+            #nodeName: Esta está fea... vinculamos directamente a un nodo... Esto no se hace salvo gloriosas excepciones, dignas de enmarcar
+            initContainers:
+                -   name:                   website-loader
+                    image:                  ubuntu:latest
+                    command:                ['sh', '-c' , '/scripts/loader.sh']
+                                            # Instalar git  apt-get update -y && apt-get install git -y
+                                            # git clone URL PATH
+                    volumeMounts:           
+                        - name:             website
+                          mountPath:        /misitioweb  # LO MIRAMOS
+                        - name:             script-loader
+                          mountPath:        /scripts  
+                    # envFrom:              Inyectar TODAS las variables de un configMap
+                    env:                    # Inyectar variables de entornos de un configMap selectivamente
+                        - name:             URL
+                          valueFrom:
+                            configMapKeyRef:
+                                name:       nginx-web-config
+                                key:        WEB_URL
+            containers:
+                -   name:                   nginx
+                    image:                  nginx
+                    ports:          
+                        - containerPort:    80
+                    volumeMounts:
+                        - name:             website
+                          mountPath:        /miweb
+                        - name:             configuracion-nginx
+                          mountPath:        /etc/nginx/conf.d
+                    #env:
+                    resources:
+                        limits:             {} # Este no lo ponemos... que me cape el admin si quiere... No me capo a mi mismo
+                        requests:           
+                            memory:         300Mi
+                            cpu:            100m
+                    #command:
+                    livenessProbe:
+                      httpGet:
+                        path: /
+                        port: 80
+                      initialDelaySeconds: 3
+                      periodSeconds: 3
+                      timeoutSeconds: 2
+                      successThreshold: 1
+                      failureThreshold: 3
+                    readinessProbe:
+                      exec:
+                        command:
+                            - curl
+                            - localhost:80
+                      initialDelaySeconds: 50
+                      periodSeconds: 5
+
+                    
+            volumes:
+                -   name:                   website
+                    persistentVolumeClaim:
+                        claimName:          nginx-website-claim
+                -   name:                   configuracion-nginx
+                    configMap:
+                        name:               nginx-config
+                -   name:                   script-loader
+                    configMap:
+                        name:               script-loader
+                        defaultMode:        0777
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+    name: miweb
+
+spec:
+    type: NodePort # De normal sería ClusterIP... En nuestro caso le vamos a poner: NodePort
+    ports:
+        -   port:                           80      # Puerto del servicio... El que se abre en la IP del servicio
+                                                    # Si quiero llamar INTERNAMENTE desde el cluster a nginx... 
+                                                    # que tengo que poner como dirección:
+                                                    # miweb:80 <<< PORT DEL SERVICIO
+            targetPort:                     80      # Puerto en el contenedor/pod
+            nodePort:                    30080      # Puerto para acceder EXTERNAMENTE
+                                                    # que tengo que poner como dirección:
+                                                    # IP_NODO_CUALQUIERA:30080
+    
+    selector:
+        site: misuperweb

@@ -1,0 +1,55 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+    name: mariadb-peticion-volumen # Este es su identificador
+
+spec:
+    storageClassName: volumen-nfs # Tipo de volumen que necesito (Caractersisticas del volumen)
+    resources:
+        requests:
+            storage: 10Gi
+    accessModes:
+        - ReadWriteOnce
+---
+kind:           Pod
+apiVersion:     v1
+metadata:
+    name:       mariadb-pod 
+    labels:
+                app: mariadb 
+spec:
+    affinity:
+        podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                        - key: app
+                          operator: In               # In NotIn Exists DoesNotExist Gt Lt
+                          values: 
+                            - nginx
+                  topologyKey: kubernetes.io/hostname
+    containers:
+        -   # Contenedor nginx
+            name:   mariadb-container
+            image:  mariadb:latest
+            env:
+                - name: MARIADB_ROOT_PASSWORD
+                  value: password
+                - name: MARIADB_DATABASE
+                  value: midb
+                - name: MARIADB_USER
+                  value: usuario
+                - name: MARIADB_PASSWORD
+                  value: password
+            ports:
+                - containerPort: 3306     # Puramente informacional
+                                          # Por ahora....
+            volumeMounts:
+                - name: datos-bbdd
+                  mountPath: /var/lib/mysql
+    volumes:
+        - name: datos-bbdd
+          persistentVolumeClaim:
+              claimName: mariadb-peticion-volumen
+

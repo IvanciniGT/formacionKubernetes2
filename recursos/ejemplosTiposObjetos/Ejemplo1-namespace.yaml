@@ -1,0 +1,7 @@
+# Tipo de objeto
+kind: Namespace
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: prueba # Este es su identificador

@@ -1,0 +1,25 @@
+                # Tipo de objeto
+kind:           Pod
+
+                # Libreria dentro de Kubernetes que contiene
+                # la definición de ese tipo de objeto
+apiVersion:     v1
+
+metadata:
+                # Este es su identificador
+    name:       nginx-pod 
+    
+                # Etiquetas, con un determinado valor.
+                # Qué etiquetas? Las que quiera.
+    labels:
+                app: nginx 
+
+spec:
+    containers:
+        -   # Contenedor nginx
+            name:   nginx-container
+            image:  nginx:latest
+            ports:
+                - containerPort: 80     # Puramente informacional
+                                        # Por ahora....
+                

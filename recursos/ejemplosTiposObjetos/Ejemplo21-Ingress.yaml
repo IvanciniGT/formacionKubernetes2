@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: NOMBRE_INGRESS
+  namespace: NAMESPACE
+spec:
+  rules:
+  - host: NOMBRE_DNS www.miapp.ad
+    http:
+      paths:
+      - backend:
+          service:
+            name: NOMBRE_SERVICIO   CLUSTERIP
+            port:
+              number: PUERTO_DE__SERVICIO
+        path: /
+        pathType: Prefix

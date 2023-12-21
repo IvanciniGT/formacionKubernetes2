@@ -1,0 +1,23 @@
+# Tipo de objeto
+kind: Service
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: v1
+
+metadata:
+    name: nginx-srv # Este es su identificador
+                    # También es el nombre dns del servicio
+
+spec:
+    type: NodePort
+    ports:
+        -   port: 8888          # Puerto del servicio
+            targetPort: 80      # Puerto en el contenedor
+            nodePort: 32000
+    
+    selector:
+        app: nginx          # Todos y ca uno de los pods que:
+                            #   1 - Tengan ese label
+                            #   2 - Estén el mismo namespace
+                            # Se tomarán como backends del servicio (balanceador)
+                            
+# curl nginx-srv:8888

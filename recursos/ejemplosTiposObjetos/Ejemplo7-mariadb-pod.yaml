@@ -1,0 +1,37 @@
+                # Tipo de objeto
+kind:           Pod
+                # Libreria dentro de Kubernetes que contiene
+                # la definición de ese tipo de objeto
+apiVersion:     v1
+metadata:
+                # Este es su identificador
+    name:       mariadb-pod 
+                # Etiquetas, con un determinado valor.
+                # Qué etiquetas? Las que quiera.
+    labels:
+                app: mariadb 
+spec:
+    containers:
+        -   # Contenedor nginx
+            name:   mariadb-container
+            image:  mariadb:latest
+            env:
+                - name: MARIADB_ROOT_PASSWORD
+                  value: password
+                - name: MARIADB_DATABASE
+                  value: midb
+                - name: MARIADB_USER
+                  value: usuario
+                - name: MARIADB_PASSWORD
+                  value: password
+            ports:
+                - containerPort: 3306     # Puramente informacional
+                                          # Por ahora....
+            volumeMounts:
+                - name: datos-bbdd
+                  mountPath: /var/lib/mysql
+    volumes:
+        - name: datos-bbdd
+          persistentVolumeClaim:
+              claimName: mariadb-peticion-volumen
+

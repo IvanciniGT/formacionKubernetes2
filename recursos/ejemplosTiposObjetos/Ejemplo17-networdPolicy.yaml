@@ -1,0 +1,58 @@
+# Tipo de objeto
+kind: NetworkPolicy
+# Libreria dentro de Kubernetes que contien la definición de ese tipo de objeto
+apiVersion: networking.k8s.io/v1 # Ingress
+
+metadata:
+    name: prueba # Este es su identificador
+    namespace: default  # Siempre van a nivel de namespace
+
+spec:
+    podSelector:
+        matchLabels: 
+            app: es-master
+    policyTypes:
+        - Ingress  # Quien puede acceder a los pods que estemos filtrando arriba: POD SELECTOR
+#        - Egress   # A donde pueden conectar los pods que estamos filtrando arriba: POD SELECTOR
+    
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels: 
+                    tipo: elasticSearch
+            - namespaceSelector:
+                matchLabels: 
+                    tipo: elasticSearch  # En este caso al namespace default, le añado esa etiqueta
+            # Podríamos meter direcciones IP
+            #- ipBlock:
+            #    cidr: 10.10.0.0/16
+            #    except: 10.10.10.0/24
+          ports:
+            - port: 9200
+              protocol: tpc
+            - port: 9300
+              protocol: tpc
+    egress:
+        - to:
+            - ipBlock:
+                cidr: 8.14.54.32
+          ports:
+            - port: 8080
+              protocol: tpc
+
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+
+metadata:
+    name: prueba
+    namespace: default
+
+spec:
+    podSelector: {}
+    policyTypes:
+        - Ingress
+---
+# A dia de hoy en los cluster de producción de empresas medio grandes/grandes.... ESTO NO SE USA
+# ISTIO / Linkerd
+
